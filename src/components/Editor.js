@@ -29,7 +29,7 @@ const Editor = ({ elements, layout, onElementClick, selectedElement, onLayoutCha
             isResizable={true}
             isDraggable={true}
             onLayoutChange={onLayoutChange}
-            compactType={null}
+            // compactType={null}
             preventCollision={true}
             useCSSTransforms={false}
           >

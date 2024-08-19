@@ -38,6 +38,8 @@ const FormBuilder = () => {
         y: dropIndex === 0 ? 0 : yPos,
         w: 12,
         h: result.draggableId === 'textarea' ? 4 : 2,
+        minH:result.draggableId === 'input' ? 2  : 4,
+        maxH:result.draggableId === 'input' ? 2 : 4,
       };
       setLayout([...layout, newLayoutItem]);
     } else if (result.source.droppableId === 'editor' && result.destination.droppableId === 'editor') {
