@@ -3,7 +3,14 @@ import { DragDropContext } from 'react-beautiful-dnd';
 import Toolbox from './ToolBox';
 import Editor from './Editor';
 import Preview from './Preview';
-import { Box, Grid, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+
+// import { Box, Grid, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Switch } from '@mui/material';
+import { Box, Grid, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Switch, FormControlLabel, Select, MenuItem } from '@mui/material';
+import uuid from 'react-uuid';
+import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import {AdapterDateFns} from '@mui/x-date-pickers/AdapterDateFnsV3';
+
+
 
 const FormBuilder = () => {
   // ... (keep existing state variables)
@@ -13,13 +20,14 @@ const FormBuilder = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
   const [loadJson, setLoadJson] = useState('');
+  const unique_id = uuid();
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
-
+    
     if (result.source.droppableId === 'toolbox' && result.destination.droppableId === 'editor') {
       const newElement = {
-        id: `element-${elements.length + 1}`,
+        id: `element-${elements.length + 1}-${unique_id}`,
         type: result.draggableId,
         properties: getDefaultProperties(result.draggableId),
       };
@@ -36,10 +44,10 @@ const FormBuilder = () => {
         i: newElement.id,
         x: 0,
         y: dropIndex === 0 ? 0 : yPos,
-        w: 12,
+        w: 6,
         h: result.draggableId === 'textarea' ? 4 : 2,
-        minH:result.draggableId === 'input' ? 2  : 4,
-        maxH:result.draggableId === 'input' ? 2 : 4,
+        minH:result.draggableId === 'textarea' ? 4  : 2,
+        maxH:result.draggableId === 'textarea' ? 4 : 2,
       };
       setLayout([...layout, newLayoutItem]);
     } else if (result.source.droppableId === 'editor' && result.destination.droppableId === 'editor') {
@@ -65,15 +73,30 @@ const FormBuilder = () => {
   const getDefaultProperties = (type) => {
     switch (type) {
       case 'input':
-        return { label: 'Input', placeholder: 'Enter text' };
+        return { label: 'Input', placeholder: 'Enter text', required: false };
       case 'textarea':
-        return { label: 'Textarea', placeholder: 'Enter long text' };
+        return { label: 'Textarea', placeholder: 'Enter long text', required: false };
       case 'checkbox':
         return { label: 'Checkbox', checked: false };
       case 'select':
-        return { label: 'Select', options: ['Option 1', 'Option 2', 'Option 3'] };
+        return { label: 'Select', options: ['Option 1', 'Option 2', 'Option 3'], required: false };
       case 'radio':
-        return { label: 'Radio Button', options: ['Option 1', 'Option 2', 'Option 3'] };
+        return { label: 'Radio Button', options: ['Option 1', 'Option 2', 'Option 3'], required: false };
+      case 'email':
+        return { label: 'Email', placeholder: 'Enter email', required: false };
+      case 'phone':
+        return { label: 'Phone', placeholder: 'Enter phone number', required: false };
+      case 'url':
+        return { label: 'URL', placeholder: 'Enter URL', required: false };
+      case 'date':
+        return { label: 'Date', required: false };
+      case 'time':
+        return { label: 'Time', required: false };
+      case 'button':
+        return {label: 'Button', variant: 'contained',color: 'primary',size: 'medium'};
+      case 'dateAndTime':
+          return {label: 'Date and Time',required: false,value: null,inputFormat: "yyyy/MM/dd HH:mm",mask: "__/__/____ __:__",minDateTime: null,maxDateTime: null,disabled: false,readOnly: false,
+          };
       default:
         return {};
     }
@@ -191,10 +214,10 @@ const FormBuilder = () => {
               Preview
             </Button>
           </Grid>
-          <Grid item xs={3}>
+          <Grid item xs={2}>
             <Toolbox />
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={8}>
             <Editor
               elements={elements}
               layout={layout}
@@ -204,41 +227,125 @@ const FormBuilder = () => {
               onDeleteElement={handleDeleteElement}
             />
           </Grid>
-                <Grid item xs={3}>
+          <Grid item xs={2}>
         {selectedElement && (
-          <Box>
-            <h3>Properties</h3>
-            {Object.entries(selectedElement.properties).map(([key, value]) => {
-              if (key === 'options' && Array.isArray(value)) {
-                return (
-                  <div key={key}>
-                    <h4>Options</h4>
-                    {value.map((option, index) => (
-                      <div key={index}>
-                        <TextField
-                          value={option}
-                          onChange={(e) => handleOptionChange(index, e.target.value)}
+            <Box
+              my={2}
+              display="flex"
+              gap={2}
+              p={2}
+              sx={{
+                border: '2px solid black',
+                flexDirection: 'column',
+                fontFamily: 'Monospace',
+                fontSize: 16,
+                bgcolor: 'white',
+                borderRadius: 1,
+              }}
+            >
+              <h3>Properties</h3>
+              {Object.entries(selectedElement.properties).map(([key, value]) => {
+                if (key === 'options' && Array.isArray(value)) {
+                  return (
+                    <div key={key}>
+                      <h4>Options</h4>
+                      {value.map((option, index) => (
+                        <div key={index}>
+                          <TextField
+                            value={option}
+                            onChange={(e) => handleOptionChange(index, e.target.value)}
+                          />
+                          <Button onClick={() => handleRemoveOption(index)}>Remove</Button>
+                        </div>
+                      ))}
+                      <Button onClick={handleAddOption}>Add Option</Button>
+                    </div>
+                  );
+                } else if (key === 'required' || key === 'checked') {
+                  return (
+                    <FormControlLabel
+                      key={key}
+                      control={
+                        <Switch
+                          checked={value}
+                          onChange={(e) => handlePropertyChange(key, e.target.checked)}
                         />
-                        <Button onClick={() => handleRemoveOption(index)}>Remove</Button>
-                      </div>
-                    ))}
-                    <Button onClick={handleAddOption}>Add Option</Button>
-                  </div>
-                );
-              } else {
-                return (
-                  <div key={key}>
-                    <label>{key}:</label>
-                    <input
-                      type="text"
-                      value={value}
-                      onChange={(e) => handlePropertyChange(key, e.target.value)}
+                      }
+                      label={key.charAt(0).toUpperCase() + key.slice(1)}
                     />
-                  </div>
-                );
-              }
-            })}
-          </Box>
+                  );
+                } 
+                else if (selectedElement.type === 'button' && (key === 'variant' || key === 'color' || key === 'size')) {
+                  const options = key === 'variant' 
+                    ? ['text', 'contained', 'outlined']
+                    : key === 'color'
+                    ? ['primary', 'secondary', 'success', 'error', 'info', 'warning']
+                    : ['small', 'medium', 'large'];
+                  
+                  return (
+                    <FormControlLabel
+                      key={key}
+                      control={
+                        <Select
+                          value={value}
+                          onChange={(e) => handlePropertyChange(key, e.target.value)}
+                          fullWidth
+                        >
+                          {options.map((option) => (
+                            <MenuItem key={option} value={option}>
+                              {option}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      }
+                      label={key.charAt(0).toUpperCase() + key.slice(1)}
+                      labelPlacement="top"
+                    />
+                  );
+                }
+                else if (selectedElement.type === 'dateAndTime') {
+                  let returnVal = '';
+                  if (key === 'value' || key === 'minDateTime' || key === 'maxDateTime') {
+                    returnVal=(
+                      <LocalizationProvider dateAdapter={AdapterDateFns} key={key}>
+                        <DateTimePicker
+                          label={key.charAt(0).toUpperCase() + key.slice(1)}
+                          value={value}
+                          onChange={(newValue) => handlePropertyChange(key, newValue)}
+                          // renderInput={(params) => <TextField {...params} fullWidth />}
+                          slots={{
+                            textField: (params) => <TextField {...params} fullWidth />
+                          }}
+                        />
+                      </LocalizationProvider>
+                    );
+                  } else if (key === 'inputFormat' || key === 'mask') {
+                    returnVal= (
+                      <TextField
+                        key={key}
+                        label={key.charAt(0).toUpperCase() + key.slice(1)}
+                        value={value}
+                        onChange={(e) => handlePropertyChange(key, e.target.value)}
+                        fullWidth
+                      />
+                    );
+                  }
+                  return returnVal;
+                }
+                else {
+                  return (
+                    <div key={key} style={{display: 'flex', gap: '1rem', flexDirection:'column'}}>
+                      <TextField
+                        label={key.charAt(0).toUpperCase() + key.slice(1)}
+                        value={value}
+                        onChange={(e) => handlePropertyChange(key, e.target.value)}
+                        fullWidth
+                      />
+                    </div>
+                  );
+                }
+              })}
+            </Box>
         )}
       </Grid>
         </Grid>
